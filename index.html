@@ -2,14 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#ec4899">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Nihongo Quest">
-<meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simone no Nihongo Quest • Dark</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -40,22 +33,16 @@
 </head>
 <body class="bg-[#0f0f13] text-slate-200">
 
+<!-- This is a temporary restore. Full content coming next. -->
 <div class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
   <div class="text-6xl mb-4">🌸</div>
   <h1 class="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-2">Simone no Nihongo Quest</h1>
-  <p class="text-slate-400 mb-6">Estou restaurando a versão completa agora...</p>
-  <p class="text-sm text-slate-500 max-w-xs">Se você está vendo esta tela, aguarde 1 minuto e atualize a página (F5). A versão completa com 100+ kanjis, missões, XP e streak está sendo enviada.</p>
+  <p class="text-slate-400 mb-6">Restaurando a versão completa...</p>
+  <p class="text-sm text-slate-500 max-w-xs">Atualize a página em 30 segundos.</p>
   <button onclick="location.reload()" class="mt-6 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-full font-semibold">
     Atualizar página
   </button>
 </div>
 
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    });
-  }
-</script>
 </body>
 </html>
