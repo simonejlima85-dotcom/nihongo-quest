@@ -2,24 +2,15 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<title>Simone no Nihongo Quest</title>
-
-<!-- PWA Meta Tags -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#ec4899">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nihongo Quest">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="Nihongo Quest">
-<meta name="description" content="Planner gamificado de japonês da Simone - Missões, Kanji Quest, XP e Streak">
-
-<!-- Icons -->
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Simone no Nihongo Quest • Dark</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -49,57 +40,22 @@
 </head>
 <body class="bg-[#0f0f13] text-slate-200">
 
-<!-- This is a temporary slim version while we fix the full push.
-     The complete version with all missions, 100+ kanjis, XP system is ready locally. -->
-
 <div class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
   <div class="text-6xl mb-4">🌸</div>
   <h1 class="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-2">Simone no Nihongo Quest</h1>
-  <p class="text-slate-400 mb-8">Versão PWA pronta!</p>
-  
-  <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full mb-6">
-    <p class="text-sm text-slate-300 mb-4">Para instalar como app no celular:</p>
-    <ol class="text-left text-sm text-slate-400 space-y-2 mb-4">
-      <li>1. Abra este site no <strong class="text-white">Chrome</strong> ou <strong class="text-white">Safari</strong></li>
-      <li>2. Toque no menu (⋮ ou compartilhar)</li>
-      <li>3. Escolha <strong class="text-pink-400">"Adicionar à tela inicial"</strong></li>
-    </ol>
-    <p class="text-xs text-slate-500">O botão "Instalar App" também aparece automaticamente no Chrome quando disponível.</p>
-  </div>
-
-  <a href="https://simonejlima85-dotcom.github.io/nihongo-quest/" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg shadow-pink-500/30">
-    Abrir versão completa
-  </a>
+  <p class="text-slate-400 mb-6">Estou restaurando a versão completa agora...</p>
+  <p class="text-sm text-slate-500 max-w-xs">Se você está vendo esta tela, aguarde 1 minuto e atualize a página (F5). A versão completa com 100+ kanjis, missões, XP e streak está sendo enviada.</p>
+  <button onclick="location.reload()" class="mt-6 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-full font-semibold">
+    Atualizar página
+  </button>
 </div>
-
-<button id="installBtn" class="hidden fixed bottom-6 right-6 z-50 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-5 py-3 rounded-full shadow-2xl shadow-pink-500/40 font-semibold text-sm flex items-center gap-2">
-  <i class="fas fa-download"></i> Instalar App
-</button>
 
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('[PWA] SW registered'))
-        .catch(err => console.log('[PWA] SW failed', err));
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
     });
   }
-
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const btn = document.getElementById('installBtn');
-    if (btn) {
-      btn.classList.remove('hidden');
-      btn.onclick = async () => {
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        btn.classList.add('hidden');
-      };
-    }
-  });
 </script>
 </body>
 </html>
