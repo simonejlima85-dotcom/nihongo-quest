@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simone no Nihongo Quest • Dark</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
+  body { background: #0f0f13; min-height: 100vh; color: #e2e8f0; }
+  .sakura { position: fixed; top: -20px; animation: fall linear infinite; pointer-events: none; z-index: 9999; opacity: 0.6; }
+  @keyframes fall {
+    to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
+  .progress-bar { transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+  .streak-fire { animation: flame 1.2s ease-in-out infinite alternate; }
+  @keyframes flame {
+    from { transform: scale(1); filter: brightness(1); }
+    to { transform: scale(1.15); filter: brightness(1.3); }
+  }
+  .card-flip { perspective: 1000px; }
+  .card-inner { transition: transform 0.5s; transform-style: preserve-3d; }
+  .card-inner.flipped { transform: rotateY(180deg); }
+  .card-front, .card-back {
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    position: absolute; width: 100%; height: 100%;
+  }
+  .card-back { transform: rotateY(180deg); }
+  .kanji-big { font-size: 4.5rem; line-height: 1; font-family: 'Noto Sans JP', sans-serif; }
+  .tab-active { background: linear-gradient(135deg, #ec4899, #a855f7); color: white; }
+  .level-badge { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  .xp-bar { background: linear-gradient(90deg, #ec4899, #8b5cf6); }
+  .boss-glow { box-shadow: 0 0 25px rgba(239, 68, 68, 0.35); }
+  .learned { opacity: 0.4; filter: grayscale(0.4); }
+  .confetti { position: fixed; width: 10px; height: 10px; top: -10px; animation: confetti-fall 3s linear forwards; z-index: 10000; }
+  @keyframes confetti-fall {
+    to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+  .card-dark {
+    background: #1a1a22;
+    border: 1px solid #2d2d3a;
+  }
+  .card-dark:hover {
+    border-color: #ec4899;
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.15);
+  }
+</style>
+</head>
+<body class="pb-24">
+
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-[#0f0f13]/95 backdrop-blur-md border-b border-slate-800 shadow-lg">
+  <div class="max-w-5xl mx-auto px-4 py-3">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+          🌸 Simone no Nihongo Quest
+        </h1>
+        <p class="text-xs text-slate-500">Dark Edition • Meta N4</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <div class="text-xs text-slate-500">Nível <span id="level-num" class="font-bold text-pink-400">1</span></div>
+          <div class="text-sm font-bold text-purple-300" id="level-name">Novata</div>
+        </div>
+        <div class="w-12 h-12 rounded-full level-badge flex items-center justify-center text-white font-bold text-lg shadow-lg" id="level-circle">1</div>
+      </div>
+    </div>
+
+    <!-- XP + Streak -->
+    <div class="mt-3 flex items-center gap-4">
+      <div class="flex-1">
+        <div class="flex justify-between text-xs mb-1">
+          <span class="text-slate-400">XP: <span id="current-xp" class="font-semibold text-pink-400">0</span></span>
+          <span class="text-slate-500" id="xp-next">300 para próximo nível</span>
+        </div>
+        <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden">
+          <div id="xp-bar" class="h-full xp-bar progress-bar rounded-full" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 bg-orange-950/60 px-3 py-1.5 rounded-full border border-orange-900/50">
+        <span class="streak-fire text-lg">🔥</span>
+        <span id="streak-count" class="font-bold text-orange-400">0</span>
+        <span class="text-xs text-orange-500/80">dias</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Navigation Tabs -->
+<nav class="max-w-5xl mx-auto px-4 mt-4">
+  <div class="flex gap-2 overflow-x-auto pb-2">
+    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn tab-active px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all">
+      <i class="fas fa-home mr-1"></i> Missões
+    </button>
+    <button onclick="switchTab('kanji')" id="tab-kanji" class="tab-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-slate-800 text-slate-300 border border-slate-700 transition-all">
+      <i class="fas fa-language mr-1"></i> Kanji Quest
+    </button>
+    <button onclick="switchTab('progress')" id="tab-progress" class="tab-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-slate-800 text-slate-300 border border-slate-700 transition-all">
+      <i class="fas fa-chart-line mr-1"></i> Progresso
+    </button>
+    <button onclick="switchTab('achievements')" id="tab-achievements" class="tab-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-slate-800 text-slate-300 border border-slate-700 transition-all">
+      <i class="fas fa-trophy mr-1"></i> Conquistas
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="max-w-5xl mx-auto px-4 mt-5">
+
+  <!-- ==================== DASHBOARD / MISSÕES ==================== -->
+  <section id="section-dashboard" class="space-y-5">
+    
+    <!-- Today's Missions -->
+    <div class="card-dark rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fas fa-tasks text-pink-400"></i> Missões de Hoje
+        </h2>
+        <span id="today-date" class="text-xs text-slate-500"></span>
+      </div>
+      <div id="daily-missions" class="space-y-3">
+        <!-- Missions will be rendered here -->
+      </div>
+    </div>
+
+    <!-- Boss Battle (Friday) -->
+    <div id="boss-section" class="card-dark rounded-2xl p-5 boss-glow border border-red-900/50 hidden">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center text-2xl">
+          ⚔️
+        </div>
+        <div>
+          <h3 class="font-bold text-red-300">Boss da Semana</h3>
+          <p class="text-xs text-slate-400">Conversação com Makoto • 18:00</p>
+        </div>
+      </div>
+      <p class="text-sm text-slate-300 mb-4">Complete a conversa de 40 minutos e ganhe <span class="text-yellow-400 font-bold">+100 XP</span>!</p>
+      <button onclick="completeBoss()" id="boss-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold hover:from-red-500 hover:to-rose-500 transition-all">
+        Completar Boss Battle
+      </button>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-3 gap-3">
+      <div class="card-dark rounded-xl p-4 text-center">
+        <div class="text-2xl font-bold text-pink-400" id="stat-missions">0</div>
+        <div class="text-xs text-slate-500 mt-1">Missões</div>
+      </div>
+      <div class="card-dark rounded-xl p-4 text-center">
+        <div class="text-2xl font-bold text-purple-400" id="stat-kanji">0</div>
+        <div class="text-xs text-slate-500 mt-1">Kanjis</div>
+      </div>
+      <div class="card-dark rounded-xl p-4 text-center">
+        <div class="text-2xl font-bold text-orange-400" id="stat-streak">0</div>
+        <div class="text-xs text-slate-500 mt-1">Streak</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== KANJI QUEST ==================== -->
+  <section id="section-kanji" class="hidden space-y-5">
+    
+    <!-- Kanji Stats -->
+    <div class="card-dark rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fas fa-language text-pink-400"></i> Kanji Quest
+        </h2>
+        <span class="text-sm text-slate-400"><span id="kanji-learned">0</span> / <span id="kanji-total">0</span></span>
+      </div>
+      <div class="h-3 bg-slate-800 rounded-full overflow-hidden mb-2">
+        <div id="kanji-progress" class="h-full bg-gradient-to-r from-pink-500 to-purple-500 progress-bar rounded-full" style="width: 0%"></div>
+      </div>
+      <p class="text-xs text-slate-500">Kanjis reais das suas conversas com o Makoto</p>
+    </div>
+
+    <!-- Kanji Sub-tabs -->
+    <div class="flex gap-2 overflow-x-auto pb-1">
+      <button onclick="switchKanjiMode('all')" id="kmode-all" class="px-4 py-1.5 rounded-full text-sm font-medium bg-pink-600 text-white">Todos</button>
+      <button onclick="switchKanjiMode('review')" id="kmode-review" class="px-4 py-1.5 rounded-full text-sm font-medium bg-slate-800 text-slate-300 border border-slate-700">Revisar</button>
+      <button onclick="switchKanjiMode('flash')" id="kmode-flash" class="px-4 py-1.5 rounded-full text-sm font-medium bg-slate-800 text-slate-300 border border-slate-700">🃏 Flashcards</button>
+      <button onclick="switchKanjiMode('quiz')" id="kmode-quiz" class="px-4 py-1.5 rounded-full text-sm font-medium bg-slate-800 text-slate-300 border border-slate-700">🎯 Quiz</button>
+    </div>
+
+    <!-- All / Review List -->
+    <div id="kanji-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <!-- Kanji cards rendered here -->
+    </div>
+
+    <!-- Flashcard Mode -->
+    <div id="flash-mode" class="hidden">
+      <div class="card-flip mx-auto max-w-md h-72 relative">
+        <div id="flash-card" class="card-inner w-full h-full relative cursor-pointer" onclick="flipCard()">
+          <div class="card-front card-dark rounded-2xl flex flex-col items-center justify-center p-6 border-2 border-pink-900/40">
+            <div class="kanji-big text-pink-300" id="flash-kanji">名</div>
+            <p class="text-slate-500 text-sm mt-4">Clique para virar</p>
+          </div>
+          <div class="card-back card-dark rounded-2xl flex flex-col items-center justify-center p-6 border-2 border-purple-900/40">
+            <div class="text-3xl font-bold text-purple-300" id="flash-reading">なまえ</div>
+            <div class="text-lg text-slate-300 mt-2" id="flash-romaji">namae</div>
+            <div class="text-sm text-slate-400 mt-1" id="flash-meaning">nome</div>
+            <div class="text-xs text-slate-500 mt-3 text-center" id="flash-example"></div>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center gap-4 mt-5">
+        <button onclick="prevFlash()" class="px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <button onclick="markLearnedFlash()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium">
+          ✓ Aprendi
+        </button>
+        <button onclick="nextFlash()" class="px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700">
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+      <p class="text-center text-xs text-slate-500 mt-3"><span id="flash-index">1</span> / <span id="flash-total">0</span></p>
+    </div>
+
+    <!-- Quiz Mode -->
+    <div id="quiz-mode" class="hidden">
+      <div class="card-dark rounded-2xl p-6 text-center">
+        <div class="kanji-big text-pink-300 mb-4" id="quiz-kanji">名</div>
+        <p class="text-slate-400 text-sm mb-5">Qual a leitura?</p>
+        <div id="quiz-options" class="grid grid-cols-1 gap-3 max-w-sm mx-auto">
+          <!-- Options rendered here -->
+        </div>
+        <p class="text-xs text-slate-500 mt-4">Acertos: <span id="quiz-score" class="text-green-400 font-bold">0</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PROGRESS ==================== -->
+  <section id="section-progress" class="hidden space-y-5">
+    <div class="card-dark rounded-2xl p-5">
+      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <i class="fas fa-flag-checkered text-pink-400"></i> Roadmap até N4
+      </h2>
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-300">Nível 1 → Novata (N5)</span>
+            <span class="text-slate-500">0 XP</span>
+          </div>
+          <div class="h-2 bg-slate-800 rounded-full"><div class="h-full bg-pink-500 rounded-full" style="width:100%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-300">Nível 2 → Aprendiz</span>
+            <span class="text-slate-500">300 XP</span>
+          </div>
+          <div class="h-2 bg-slate-800 rounded-full"><div id="road-2" class="h-full bg-purple-500 rounded-full progress-bar" style="width:0%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-300">Nível 3 → Guerreiro(a)</span>
+            <span class="text-slate-500">800 XP</span>
+          </div>
+          <div class="h-2 bg-slate-800 rounded-full"><div id="road-3" class="h-full bg-indigo-500 rounded-full progress-bar" style="width:0%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-300">Nível 4 → N4 Challenger</span>
+            <span class="text-slate-500">1500 XP</span>
+          </div>
+          <div class="h-2 bg-slate-800 rounded-full"><div id="road-4" class="h-full bg-amber-500 rounded-full progress-bar" style="width:0%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-slate-300">Nível 5 → N4 Hero 🏆</span>
+            <span class="text-slate-500">3000 XP</span>
+          </div>
+          <div class="h-2 bg-slate-800 rounded-full"><div id="road-5" class="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full progress-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-dark rounded-2xl p-5">
+      <h3 class="font-bold text-white mb-3">Estatísticas</h3>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="flex justify-between"><span class="text-slate-400">XP Total</span><span id="stat-xp" class="text-pink-400 font-bold">0</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Streak Atual</span><span id="stat-streak2" class="text-orange-400 font-bold">0</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Kanjis Aprendidos</span><span id="stat-kanji2" class="text-purple-400 font-bold">0</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Boss Completados</span><span id="stat-boss" class="text-red-400 font-bold">0</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== ACHIEVEMENTS ==================== -->
+  <section id="section-achievements" class="hidden space-y-5">
+    <div class="card-dark rounded-2xl p-5">
+      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <i class="fas fa-trophy text-yellow-400"></i> Conquistas
+      </h2>
+      <div id="achievements-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Achievements rendered here -->
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ==================== DATA ====================
+const STORAGE_KEY = 'simone_nihongo_quest_dark_v1';
+
+const LEVELS = [
+  { level: 1, name: 'Novata', xp: 0 },
+  { level: 2, name: 'Aprendiz', xp: 300 },
+  { level: 3, name: 'Guerreiro(a)', xp: 800 },
+  { level: 4, name: 'N4 Challenger', xp: 1500 },
+  { level: 5, name: 'N4 Hero', xp: 3000 }
+];
+
+const KANJIS = [
+  // Nome & Identidade
+  { k: '名', w: '名前', r: 'なまえ', rom: 'namae', m: 'nome', ex: '名前は何ですか？', cat: 'nome' },
+  { k: '字', w: '名字', r: 'みょうじ', rom: 'myōji', m: 'sobrenome', ex: '名字はリマです。', cat: 'nome' },
+  { k: '何', w: '何', r: 'なん/なに', rom: 'nan/nani', m: 'o quê', ex: '何ですか？', cat: 'geral' },
+  { k: '誰', w: '誰', r: 'だれ', rom: 'dare', m: 'quem', ex: 'それは誰ですか？', cat: 'geral' },
+  
+  // Tempo
+  { k: '今', w: '今', r: 'いま', rom: 'ima', m: 'agora', ex: '今何時ですか？', cat: 'tempo' },
+  { k: '時', w: '時', r: 'じ', rom: 'ji', m: 'hora', ex: '今6時です。', cat: 'tempo' },
+  { k: '昨', w: '昨日', r: 'きのう', rom: 'kinō', m: 'ontem', ex: '昨日何時に寝ましたか？', cat: 'tempo' },
+  { k: '朝', w: '今朝', r: 'けさ', rom: 'kesa', m: 'esta manhã', ex: '今朝何時に起きましたか？', cat: 'tempo' },
+  { k: '午', w: '午前', r: 'ごぜん', rom: 'gozen', m: 'manhã (AM)', ex: '午前6時に起きました。', cat: 'tempo' },
+  { k: '後', w: '午後', r: 'ごご', rom: 'gogo', m: 'tarde (PM)', ex: '午後10時半に寝ました。', cat: 'tempo' },
+  { k: '週', w: '週', r: 'しゅう', rom: 'shū', m: 'semana', ex: '週に1回勉強しています。', cat: 'tempo' },
+  { k: '回', w: '回', r: 'かい', rom: 'kai', m: 'vezes', ex: '週に2回ヨガをしています。', cat: 'tempo' },
+  { k: '年', w: '年', r: 'ねん', rom: 'nen', m: 'ano', ex: '1年間日本語を勉強しています。', cat: 'tempo' },
+  { k: '来', w: '来年', r: 'らいねん', rom: 'rainen', m: 'ano que vem', ex: '来年は中学生になります。', cat: 'tempo' },
+  { k: '週', w: '週末', r: 'しゅうまつ', rom: 'shūmatsu', m: 'fim de semana', ex: '週末は何をしたいですか？', cat: 'tempo' },
+  
+  // Clima
+  { k: '天', w: '天気', r: 'てんき', rom: 'tenki', m: 'tempo/clima', ex: '今日天気はどうですか？', cat: 'clima' },
+  { k: '気', w: '天気', r: 'てんき', rom: 'tenki', m: 'tempo/clima', ex: '天気は晴れです。', cat: 'clima' },
+  { k: '晴', w: '晴れ', r: 'はれ', rom: 'hare', m: 'ensolarado', ex: '今日天気は晴れです。', cat: 'clima' },
+  { k: '雨', w: '雨', r: 'あめ', rom: 'ame', m: 'chuva', ex: '今日天気は雨です。', cat: 'clima' },
+  { k: '度', w: '度', r: 'ど', rom: 'do', m: 'grau', ex: '16度です。', cat: 'clima' },
+  
+  // Família
+  { k: '家', w: '家族', r: 'かぞく', rom: 'kazoku', m: 'família', ex: '家族は何人いますか？', cat: 'familia' },
+  { k: '族', w: '家族', r: 'かぞく', rom: 'kazoku', m: 'família', ex: '家族は4人います。', cat: 'familia' },
+  { k: '父', w: '父', r: 'ちち', rom: 'chichi', m: 'pai (meu)', ex: '父と母と娘と夫と私です。', cat: 'familia' },
+  { k: '母', w: '母', r: 'はは', rom: 'haha', m: 'mãe (minha)', ex: '私のお母さんはサッカーが好きです。', cat: 'familia' },
+  { k: '娘', w: '娘', r: 'むすめ', rom: 'musume', m: 'filha', ex: '娘は11歳です。', cat: 'familia' },
+  { k: '夫', w: '夫', r: 'おっと', rom: 'otto', m: 'marido', ex: '夫はサッカー好きじゃないです。', cat: 'familia' },
+  { k: '妻', w: '妻', r: 'つま', rom: 'tsuma', m: 'esposa', ex: '妻と息子と娘と私です。', cat: 'familia' },
+  { k: '歳', w: '歳', r: 'さい', rom: 'sai', m: 'anos de idade', ex: '11歳です。', cat: 'familia' },
+  { k: '学', w: '学生', r: 'がくせい', rom: 'gakusei', m: 'estudante', ex: '学生の時どんな音楽が流行っていましたか？', cat: 'familia' },
+  { k: '中', w: '中学生', r: 'ちゅうがくせい', rom: 'chūgakusei', m: 'ensino médio', ex: '来年は中学生になります。', cat: 'familia' },
+  { k: '小', w: '小学校', r: 'しょうがっこう', rom: 'shōgakkō', m: 'ensino fundamental', ex: '小学6年生です。', cat: 'familia' },
+  { k: '年', w: '年生', r: 'ねんせい', rom: 'nensei', m: 'ano escolar', ex: '6年生です。', cat: 'familia' },
+  
+  // Rotina
+  { k: '起', w: '起きる', r: 'おきる', rom: 'okiru', m: 'acordar', ex: '今朝6時に起きました。', cat: 'rotina' },
+  { k: '寝', w: '寝る', r: 'ねる', rom: 'neru', m: 'dormir', ex: '昨日10時半に寝ました。', cat: 'rotina' },
+  { k: '食', w: '食べる', r: 'たべる', rom: 'taberu', m: 'comer', ex: '最近おいしいものを食べましたか？', cat: 'rotina' },
+  { k: '見', w: '見る', r: 'みる', rom: 'miru', m: 'ver/assistir', ex: 'アニメを見ています。', cat: 'rotina' },
+  { k: '読', w: '読む', r: 'よむ', rom: 'yomu', m: 'ler', ex: '本を読んでいます。', cat: 'rotina' },
+  { k: '行', w: '行く', r: 'いく', rom: 'iku', m: 'ir', ex: 'ショッピングに行ったりしたいです。', cat: 'rotina' },
+  { k: '通', w: '通う', r: 'かよう', rom: 'kayou', m: 'frequentar', ex: 'ジムへ通ったことがありますか？', cat: 'rotina' },
+  { k: '勉', w: '勉強', r: 'べんきょう', rom: 'benkyō', m: 'estudo', ex: '日本語を勉強しています。', cat: 'rotina' },
+  { k: '強', w: '勉強', r: 'べんきょう', rom: 'benkyō', m: 'estudo', ex: '週に1回勉強しています。', cat: 'rotina' },
+  { k: '仕', w: '仕事', r: 'しごと', rom: 'shigoto', m: 'trabalho', ex: '仕事の会議があります。', cat: 'rotina' },
+  { k: '事', w: '仕事', r: 'しごと', rom: 'shigoto', m: 'trabalho', ex: '最近は忙しいです。', cat: 'rotina' },
+  { k: '会', w: '会議', r: 'かいぎ', rom: 'kaigi', m: 'reunião', ex: '明日仕事の会議があります。', cat: 'rotina' },
+  { k: '議', w: '会議', r: 'かいぎ', rom: 'kaigi', m: 'reunião', ex: '週末は仕事の会議があります。', cat: 'rotina' },
+  
+  // Preferências
+  { k: '好', w: '好き', r: 'すき', rom: 'suki', m: 'gostar', ex: 'ヨガが好きです。', cat: 'pref' },
+  { k: '楽', w: '楽しい', r: 'たのしい', rom: 'tanoshii', m: 'divertido', ex: '楽しいです。', cat: 'pref' },
+  { k: '面', w: '面白い', r: 'おもしろい', rom: 'omoshiroi', m: 'interessante', ex: '面白いです。', cat: 'pref' },
+  { k: '白', w: '面白い', r: 'おもしろい', rom: 'omoshiroi', m: 'interessante', ex: '面白い本です。', cat: 'pref' },
+  { k: '特', w: '特に', r: 'とくに', rom: 'toku ni', m: 'especialmente', ex: '特にないです。', cat: 'pref' },
+  { k: '最', w: '最近', r: 'さいきん', rom: 'saikin', m: 'ultimamente', ex: '最近は忙しいです。', cat: 'pref' },
+  { k: '近', w: '最近', r: 'さいきん', rom: 'saikin', m: 'ultimamente', ex: '最近スポーツをしていますか？', cat: 'pref' },
+  
+  // Esportes & Atividade
+  { k: '運', w: '運動', r: 'うんどう', rom: 'undō', m: 'exercício', ex: '最近スポーツをしていますか？', cat: 'esporte' },
+  { k: '動', w: '運動', r: 'うんどう', rom: 'undō', m: 'exercício', ex: 'ヨガをしています。', cat: 'esporte' },
+  { k: '体', w: '体調', r: 'たいちょう', rom: 'taichō', m: 'condição física', ex: '体調が悪いです。', cat: 'saude' },
+  { k: '調', w: '体調', r: 'たいちょう', rom: 'taichō', m: 'condição física', ex: '少し体調が悪いです。', cat: 'saude' },
+  
+  // Saúde
+  { k: '風', w: '風邪', r: 'かぜ', rom: 'kaze', m: 'resfriado/gripe', ex: '風邪を引いています。', cat: 'saude' },
+  { k: '邪', w: '風邪', r: 'かぜ', rom: 'kaze', m: 'resfriado/gripe', ex: '風邪を引いていて、体調が悪いです。', cat: 'saude' },
+  { k: '咳', w: '咳', r: 'せき', rom: 'seki', m: 'tosse', ex: '咳が出ます。', cat: 'saude' },
+  { k: '喉', w: '喉', r: 'のど', rom: 'nodo', m: 'garganta', ex: '喉が痛いです。', cat: 'saude' },
+  { k: '痛', w: '痛い', r: 'いたい', rom: 'itai', m: 'doer', ex: '頭が痛いです。', cat: 'saude' },
+  { k: '頭', w: '頭', r: 'あたま', rom: 'atama', m: 'cabeça', ex: '頭が痛いです。', cat: 'saude' },
+  { k: '熱', w: '熱', r: 'ねつ', rom: 'netsu', m: 'febre', ex: '熱があります。', cat: 'saude' },
+  { k: '大', w: '大事', r: 'だいじ', rom: 'daiji', m: 'importante / cuide-se', ex: 'お大事に。', cat: 'saude' },
+  { k: '事', w: '大事', r: 'だいじ', rom: 'daiji', m: 'importante', ex: 'お大事にしてください。', cat: 'saude' },
+  
+  // Música & Anime
+  { k: '音', w: '音楽', r: 'おんがく', rom: 'ongaku', m: 'música', ex: '音楽は好きですか？', cat: 'musica' },
+  { k: '楽', w: '音楽', r: 'おんがく', rom: 'ongaku', m: 'música', ex: 'どんな音楽が好きですか？', cat: 'musica' },
+  { k: '曲', w: '曲', r: 'きょく', rom: 'kyoku', m: 'música/canção', ex: '一番好きな曲は何ですか？', cat: 'musica' },
+  { k: '聴', w: '聴く', r: 'きく', rom: 'kiku', m: 'ouvir', ex: '音楽を聴いています。', cat: 'musica' },
+  { k: '歌', w: '歌う', r: 'うたう', rom: 'utau', m: 'cantar', ex: '歌が好きです。', cat: 'musica' },
+  { k: '動', w: 'アニメ', r: 'あにめ', rom: 'anime', m: 'anime', ex: '進撃の巨人を見ました。', cat: 'anime' },
+  { k: '画', w: '漫画', r: 'まんが', rom: 'manga', m: 'mangá', ex: '日本のアニメや漫画は好きですか？', cat: 'anime' },
+  
+  // Lugares
+  { k: '場', w: '場所', r: 'ばしょ', rom: 'basho', m: 'lugar', ex: '行ってみたい場所はありますか？', cat: 'lugar' },
+  { k: '所', w: '場所', r: 'ばしょ', rom: 'basho', m: 'lugar', ex: 'ブラジルで一番行ってみたい場所はフロリアナポリスです。', cat: 'lugar' },
+  { k: '外', w: '外国', r: 'がいこく', rom: 'gaikoku', m: 'exterior', ex: '外国へ行ったことがありますか？', cat: 'lugar' },
+  { k: '国', w: '外国', r: 'がいこく', rom: 'gaikoku', m: 'país estrangeiro', ex: 'まだ外国へ行ったことがありません。', cat: 'lugar' },
+  { k: '旅', w: '旅行', r: 'りょこう', rom: 'ryokō', m: 'viagem', ex: 'あまり旅行したことがありません。', cat: 'lugar' },
+  { k: '行', w: '旅行', r: 'りょこう', rom: 'ryokō', m: 'viagem', ex: '旅行が好きです。', cat: 'lugar' },
+  
+  // Compras & Comida
+  { k: '買', w: '買う', r: 'かう', rom: 'kau', m: 'comprar', ex: '最近買い物しましたか？', cat: 'compras' },
+  { k: '物', w: '買い物', r: 'かいもの', rom: 'kaimono', m: 'compras', ex: '最近服を買いました。', cat: 'compras' },
+  { k: '電', w: '電話', r: 'でんわ', rom: 'denwa', m: 'telefone', ex: '携帯電話を買いました。', cat: 'compras' },
+  { k: '話', w: '電話', r: 'でんわ', rom: 'denwa', m: 'telefone', ex: '電話番号は何ですか？', cat: 'compras' },
+  
+  // Experiência & Habilidade
+  { k: '経', w: '経験', r: 'けいけん', rom: 'keiken', m: 'experiência', ex: '行ったことがありますか？', cat: 'exp' },
+  { k: '験', w: '経験', r: 'けいけん', rom: 'keiken', m: 'experiência', ex: 'コンサートへ行ったことがありません。', cat: 'exp' },
+  { k: '可', w: 'できる', r: 'できる', rom: 'dekiru', m: 'poder/conseguir', ex: '楽器を弾くことができますか？', cat: 'exp' },
+  { k: '弾', w: '弾く', r: 'ひく', rom: 'hiku', m: 'tocar (instrumento)', ex: '楽器を弾くことができません。', cat: 'exp' },
+  
+  // Mais úteis
+  { k: '思', w: '思う', r: 'おもう', rom: 'omou', m: 'pensar', ex: '今は思いつきません。', cat: 'geral' },
+  { k: '考', w: '考える', r: 'かんがえる', rom: 'kangaeru', m: 'pensar/considerar', ex: 'ちょっと待ってください。考えます。', cat: 'geral' },
+  { k: '待', w: '待つ', r: 'まつ', rom: 'matsu', m: 'esperar', ex: 'ちょっと待ってください。', cat: 'geral' },
+  { k: '分', w: '分かる', r: 'わかる', rom: 'wakaru', m: 'entender', ex: '分かりました。', cat: 'geral' },
+  { k: '言', w: '言う', r: 'いう', rom: 'iu', m: 'dizer', ex: 'もう一度言ってください。', cat: 'geral' },
+  { k: '知', w: '知る', r: 'しる', rom: 'shiru', m: 'saber/conhecer', ex: 'あまり詳しく知りません。', cat: 'geral' },
+  { k: '正', w: '正直', r: 'しょうじき', rom: 'shōjiki', m: 'sinceramente', ex: '正直に言うと、よくわかりません。', cat: 'geral' },
+  { k: '直', w: '正直', r: 'しょうじき', rom: 'shōjiki', m: 'sinceramente', ex: '正直に言うと…', cat: 'geral' },
+  { k: '少', w: '少し', r: 'すこし', rom: 'sukoshi', m: 'um pouco', ex: '少し風邪を引いています。', cat: 'geral' },
+  { k: '忙', w: '忙しい', r: 'いそがしい', rom: 'isogashii', m: 'ocupado', ex: '最近は忙しいです。', cat: 'geral' },
+  { k: '休', w: '休む', r: 'やすむ', rom: 'yasumu', m: 'descansar', ex: '週末は休みたいです。', cat: 'geral' },
+  { k: '予', w: '予定', r: 'よてい', rom: 'yotei', m: 'planos', ex: '明日は特に予定はないです。', cat: 'geral' },
+  { k: '定', w: '予定', r: 'よてい', rom: 'yotei', m: 'planos', ex: '特に予定はないです。', cat: 'geral' },
+];
+
+const ACHIEVEMENTS = [
+  { id: 'first_mission', name: 'Primeira Missão', desc: 'Complete sua primeira missão', icon: '🎯', condition: d => d.missionsCompleted >= 1 },
+  { id: 'streak_3', name: '3 Dias de Fogo', desc: 'Mantenha 3 dias de streak', icon: '🔥', condition: d => d.streak >= 3 },
+  { id: 'streak_7', name: 'Uma Semana', desc: '7 dias de streak', icon: '⚡', condition: d => d.streak >= 7 },
+  { id: 'first_boss', name: 'Boss Slayer', desc: 'Complete a conversa com Makoto', icon: '⚔️', condition: d => d.bossCompleted >= 1 },
+  { id: 'kanji_10', name: '10 Kanjis', desc: 'Aprenda 10 kanjis', icon: '📚', condition: d => d.learnedKanji.length >= 10 },
+  { id: 'kanji_30', name: '30 Kanjis', desc: 'Aprenda 30 kanjis', icon: '📖', condition: d => d.learnedKanji.length >= 30 },
+  { id: 'kanji_50', name: '50 Kanjis', desc: 'Aprenda 50 kanjis', icon: '🏆', condition: d => d.learnedKanji.length >= 50 },
+  { id: 'level_2', name: 'Aprendiz', desc: 'Alcance o nível 2', icon: '🌱', condition: d => d.xp >= 300 },
+  { id: 'level_3', name: 'Guerreiro', desc: 'Alcance o nível 3', icon: '🗡️', condition: d => d.xp >= 800 },
+  { id: 'level_4', name: 'N4 Challenger', desc: 'Alcance o nível 4', icon: '🛡️', condition: d => d.xp >= 1500 },
+];
+
+// ==================== STATE ====================
+let data = {
+  xp: 0,
+  streak: 0,
+  lastStudyDate: null,
+  missionsCompleted: 0,
+  bossCompleted: 0,
+  learnedKanji: [],
+  completedMissions: {},
+  achievements: []
+};
+
+let currentTab = 'dashboard';
+let kanjiMode = 'all';
+let flashIndex = 0;
+let quizScore = 0;
+
+// ==================== INIT ====================
+function loadData() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    data = { ...data, ...JSON.parse(saved) };
+  }
+  updateAll();
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function updateAll() {
+  updateLevel();
+  updateStreak();
+  renderDailyMissions();
+  renderKanjiList();
+  renderAchievements();
+  updateStats();
+  updateRoadmap();
+  checkBossDay();
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+// ==================== LEVEL ====================
+function updateLevel() {
+  let currentLevel = LEVELS[0];
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (data.xp >= LEVELS[i].xp) {
+      currentLevel = LEVELS[i];
+      break;
+    }
+  }
+  const nextLevel = LEVELS.find(l => l.level === currentLevel.level + 1) || { xp: currentLevel.xp + 1000, name: 'Max' };
+  const progress = ((data.xp - currentLevel.xp) / (nextLevel.xp - currentLevel.xp)) * 100;
+  
+  document.getElementById('level-num').textContent = currentLevel.level;
+  document.getElementById('level-name').textContent = currentLevel.name;
+  document.getElementById('level-circle').textContent = currentLevel.level;
+  document.getElementById('current-xp').textContent = data.xp;
+  document.getElementById('xp-next').textContent = `${nextLevel.xp - data.xp} para ${nextLevel.name}`;
+  document.getElementById('xp-bar').style.width = Math.min(100, progress) + '%';
+}
+
+// ==================== STREAK ====================
+function updateStreak() {
+  document.getElementById('streak-count').textContent = data.streak;
+  document.getElementById('stat-streak').textContent = data.streak;
+  document.getElementById('stat-streak2').textContent = data.streak;
+}
+
+function checkStreak() {
+  const today = new Date().toDateString();
+  if (data.lastStudyDate === today) return;
+  
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  if (data.lastStudyDate === yesterday.toDateString()) {
+    data.streak += 1;
+  } else if (data.lastStudyDate !== today) {
+    data.streak = 1;
+  }
+  data.lastStudyDate = today;
+  saveData();
+  updateStreak();
+}
+
+// ==================== MISSIONS ====================
+function getDayOfWeek() {
+  return new Date().getDay(); // 0=Sun, 1=Mon...
+}
+
+function renderDailyMissions() {
+  const day = getDayOfWeek();
+  const today = new Date().toDateString();
+  const container = document.getElementById('daily-missions');
+  
+  let missions = [];
+  
+  // Manhã
+  if (day >= 1 && day <= 3) { // Mon-Wed
+    missions.push({ id: 'yoga', name: '🧘 Yoga de Manhã', desc: '20-25 min depois que a filha sair', xp: 20 });
+  } else if (day === 4 || day === 5) { // Thu-Fri
+    missions.push({ id: 'course', name: '🎓 Curso de Japonês', desc: '20 min no computador (curso)', xp: 40 });
+  }
+  
+  // Almoço (weekdays)
+  if (day >= 1 && day <= 5) {
+    missions.push({ id: 'lunch', name: '🍱 Japonês no Almoço', desc: '15 min (shadowing / frases / kanji)', xp: 25 });
+  }
+  
+  // Kanji extra
+  missions.push({ id: 'kanji', name: '📚 Kanji Quest', desc: 'Aprender 3-5 kanjis novos', xp: 15 });
+  
+  container.innerHTML = missions.map(m => {
+    const key = `${today}_${m.id}`;
+    const done = data.completedMissions[key];
+    return `
+      <div class="flex items-center justify-between p-3 rounded-xl ${done ? 'bg-green-950/40 border border-green-900/50' : 'bg-slate-800/50 border border-slate-700'}">
+        <div class="flex-1">
+          <div class="font-medium ${done ? 'text-green-400 line-through' : 'text-white'}">${m.name}</div>
+          <div class="text-xs text-slate-500">${m.desc} • +${m.xp} XP</div>
+        </div>
+        <button onclick="completeMission('${m.id}', ${m.xp})" 
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all ${done ? 'bg-green-900/50 text-green-400 cursor-default' : 'bg-pink-600 hover:bg-pink-500 text-white'}"
+          ${done ? 'disabled' : ''}>
+          ${done ? '✓ Feito' : 'Completar'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function completeMission(id, xp) {
+  const today = new Date().toDateString();
+  const key = `${today}_${id}`;
+  if (data.completedMissions[key]) return;
+  
+  data.completedMissions[key] = true;
+  data.xp += xp;
+  data.missionsCompleted += 1;
+  checkStreak();
+  saveData();
+  updateAll();
+  spawnConfetti();
+  checkAchievements();
+}
+
+// ==================== BOSS ====================
+function checkBossDay() {
+  const day = getDayOfWeek();
+  const bossSection = document.getElementById('boss-section');
+  if (day === 5) { // Friday
+    bossSection.classList.remove('hidden');
+  } else {
+    bossSection.classList.add('hidden');
+  }
+}
+
+function completeBoss() {
+  const today = new Date().toDateString();
+  const key = `${today}_boss`;
+  if (data.completedMissions[key]) {
+    alert('Você já completou o Boss de hoje!');
+    return;
+  }
+  data.completedMissions[key] = true;
+  data.xp += 100;
+  data.bossCompleted += 1;
+  checkStreak();
+  saveData();
+  updateAll();
+  spawnConfetti(30);
+  checkAchievements();
+  alert('⚔️ Boss derrotado! +100 XP');
+}
+
+// ==================== KANJI ====================
+function renderKanjiList() {
+  const container = document.getElementById('kanji-list');
+  const flashMode = document.getElementById('flash-mode');
+  const quizMode = document.getElementById('quiz-mode');
+  
+  document.getElementById('kanji-total').textContent = KANJIS.length;
+  document.getElementById('kanji-learned').textContent = data.learnedKanji.length;
+  document.getElementById('kanji-progress').style.width = (data.learnedKanji.length / KANJIS.length * 100) + '%';
+  document.getElementById('stat-kanji').textContent = data.learnedKanji.length;
+  document.getElementById('stat-kanji2').textContent = data.learnedKanji.length;
+  
+  if (kanjiMode === 'flash') {
+    container.classList.add('hidden');
+    flashMode.classList.remove('hidden');
+    quizMode.classList.add('hidden');
+    renderFlash();
+    return;
+  }
+  if (kanjiMode === 'quiz') {
+    container.classList.add('hidden');
+    flashMode.classList.add('hidden');
+    quizMode.classList.remove('hidden');
+    renderQuiz();
+    return;
+  }
+  
+  container.classList.remove('hidden');
+  flashMode.classList.add('hidden');
+  quizMode.classList.add('hidden');
+  
+  let list = KANJIS;
+  if (kanjiMode === 'review') {
+    list = KANJIS.filter(k => !data.learnedKanji.includes(k.w));
+  }
+  
+  container.innerHTML = list.map((k, i) => {
+    const learned = data.learnedKanji.includes(k.w);
+    return `
+      <div class="card-dark rounded-xl p-4 ${learned ? 'learned' : ''} transition-all">
+        <div class="flex items-start gap-3">
+          <div class="text-4xl text-pink-300 font-bold" style="font-family: 'Noto Sans JP'">${k.k}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-white">${k.w}</div>
+            <div class="text-sm text-purple-300">${k.r} <span class="text-slate-500">(${k.rom})</span></div>
+            <div class="text-xs text-slate-400 mt-0.5">${k.m}</div>
+            <div class="text-xs text-slate-500 mt-1 italic truncate">"${k.ex}"</div>
+          </div>
+          <button onclick="toggleKanji('${k.w}')" class="text-lg ${learned ? 'text-green-400' : 'text-slate-600 hover:text-green-400'}">
+            <i class="fas ${learned ? 'fa-check-circle' : 'fa-circle'}"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleKanji(word) {
+  const idx = data.learnedKanji.indexOf(word);
+  if (idx >= 0) {
+    data.learnedKanji.splice(idx, 1);
+  } else {
+    data.learnedKanji.push(word);
+    data.xp += 5;
+    spawnConfetti(8);
+  }
+  saveData();
+  updateAll();
+  checkAchievements();
+}
+
+function switchKanjiMode(mode) {
+  kanjiMode = mode;
+  ['all', 'review', 'flash', 'quiz'].forEach(m => {
+    const btn = document.getElementById('kmode-' + m);
+    if (m === mode) {
+      btn.className = 'px-4 py-1.5 rounded-full text-sm font-medium bg-pink-600 text-white';
+    } else {
+      btn.className = 'px-4 py-1.5 rounded-full text-sm font-medium bg-slate-800 text-slate-300 border border-slate-700';
+    }
+  });
+  renderKanjiList();
+}
+
+// Flashcards
+function getUnlearned() {
+  return KANJIS.filter(k => !data.learnedKanji.includes(k.w));
+}
+
+function renderFlash() {
+  const list = getUnlearned().length > 0 ? getUnlearned() : KANJIS;
+  if (flashIndex >= list.length) flashIndex = 0;
+  const k = list[flashIndex];
+  document.getElementById('flash-kanji').textContent = k.k;
+  document.getElementById('flash-reading').textContent = k.r;
+  document.getElementById('flash-romaji').textContent = k.rom;
+  document.getElementById('flash-meaning').textContent = k.m;
+  document.getElementById('flash-example').textContent = k.ex;
+  document.getElementById('flash-index').textContent = flashIndex + 1;
+  document.getElementById('flash-total').textContent = list.length;
+  document.getElementById('flash-card').classList.remove('flipped');
+}
+
+function flipCard() {
+  document.getElementById('flash-card').classList.toggle('flipped');
+}
+
+function nextFlash() {
+  const list = getUnlearned().length > 0 ? getUnlearned() : KANJIS;
+  flashIndex = (flashIndex + 1) % list.length;
+  renderFlash();
+}
+
+function prevFlash() {
+  const list = getUnlearned().length > 0 ? getUnlearned() : KANJIS;
+  flashIndex = (flashIndex - 1 + list.length) % list.length;
+  renderFlash();
+}
+
+function markLearnedFlash() {
+  const list = getUnlearned().length > 0 ? getUnlearned() : KANJIS;
+  const k = list[flashIndex];
+  if (!data.learnedKanji.includes(k.w)) {
+    data.learnedKanji.push(k.w);
+    data.xp += 5;
+    saveData();
+    spawnConfetti(8);
+    checkAchievements();
+  }
+  nextFlash();
+  updateAll();
+}
+
+// Quiz
+function renderQuiz() {
+  const unlearned = getUnlearned();
+  const list = unlearned.length > 0 ? unlearned : KANJIS;
+  const k = list[Math.floor(Math.random() * list.length)];
+  
+  document.getElementById('quiz-kanji').textContent = k.k;
+  
+  // Generate options
+  let options = [k.r];
+  while (options.length < 4) {
+    const random = KANJIS[Math.floor(Math.random() * KANJIS.length)].r;
+    if (!options.includes(random)) options.push(random);
+  }
+  options = options.sort(() => Math.random() - 0.5);
+  
+  document.getElementById('quiz-options').innerHTML = options.map(opt => `
+    <button onclick="answerQuiz('${opt}', '${k.r}', '${k.w}')" 
+      class="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 hover:border-pink-500 hover:bg-slate-700 transition-all">
+      ${opt}
+    </button>
+  `).join('');
+  
+  document.getElementById('quiz-score').textContent = quizScore;
+}
+
+function answerQuiz(selected, correct, word) {
+  if (selected === correct) {
+    quizScore++;
+    if (!data.learnedKanji.includes(word)) {
+      data.learnedKanji.push(word);
+      data.xp += 5;
+      saveData();
+    }
+    spawnConfetti(5);
+  }
+  setTimeout(() => {
+    renderQuiz();
+    updateAll();
+    checkAchievements();
+  }, 600);
+}
+
+// ==================== ACHIEVEMENTS ====================
+function renderAchievements() {
+  const container = document.getElementById('achievements-list');
+  container.innerHTML = ACHIEVEMENTS.map(a => {
+    const unlocked = data.achievements.includes(a.id);
+    return `
+      <div class="flex items-center gap-3 p-3 rounded-xl ${unlocked ? 'bg-yellow-950/30 border border-yellow-900/40' : 'bg-slate-800/40 border border-slate-700 opacity-50'}">
+        <div class="text-3xl">${a.icon}</div>
+        <div>
+          <div class="font-medium ${unlocked ? 'text-yellow-300' : 'text-slate-400'}">${a.name}</div>
+          <div class="text-xs text-slate-500">${a.desc}</div>
+        </div>
+        ${unlocked ? '<i class="fas fa-check text-yellow-400 ml-auto"></i>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(a => {
+    if (!data.achievements.includes(a.id) && a.condition(data)) {
+      data.achievements.push(a.id);
+      data.xp += 20;
+      saveData();
+      spawnConfetti(15);
+      setTimeout(() => alert(`🏆 Conquista desbloqueada: ${a.name}!`), 300);
+    }
+  });
+  renderAchievements();
+}
+
+// ==================== STATS & ROADMAP ====================
+function updateStats() {
+  document.getElementById('stat-missions').textContent = data.missionsCompleted;
+  document.getElementById('stat-xp').textContent = data.xp;
+  document.getElementById('stat-boss').textContent = data.bossCompleted;
+}
+
+function updateRoadmap() {
+  const thresholds = [0, 300, 800, 1500, 3000];
+  for (let i = 2; i <= 5; i++) {
+    const prev = thresholds[i-2];
+    const curr = thresholds[i-1];
+    const pct = Math.min(100, Math.max(0, ((data.xp - prev) / (curr - prev)) * 100));
+    const el = document.getElementById('road-' + i);
+    if (el) el.style.width = pct + '%';
+  }
+}
+
+// ==================== TABS ====================
+function switchTab(tab) {
+  currentTab = tab;
+  ['dashboard', 'kanji', 'progress', 'achievements'].forEach(t => {
+    document.getElementById('section-' + t).classList.toggle('hidden', t !== tab);
+    const btn = document.getElementById('tab-' + t);
+    if (t === tab) {
+      btn.className = 'tab-btn tab-active px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all';
+    } else {
+      btn.className = 'tab-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-slate-800 text-slate-300 border border-slate-700 transition-all';
+    }
+  });
+}
+
+// ==================== EFFECTS ====================
+function spawnConfetti(count = 20) {
+  const colors = ['#ec4899', '#a855f7', '#f59e0b', '#10b981', '#3b82f6'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (2 + Math.random() * 2) + 's';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+  // Sakura
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'sakura';
+    s.textContent = '🌸';
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.fontSize = (12 + Math.random() * 16) + 'px';
+    s.style.animationDuration = (3 + Math.random() * 3) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 6000);
+  }
+}
+
+// ==================== START ====================
+loadData();
+</script>
+</body>
+</html>
